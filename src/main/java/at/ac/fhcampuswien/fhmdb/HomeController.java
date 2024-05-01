@@ -8,13 +8,10 @@ import at.ac.fhcampuswien.fhmdb.models.Movie;
 import at.ac.fhcampuswien.fhmdb.models.SortedState;
 import at.ac.fhcampuswien.fhmdb.ui.MovieCell;
 
-import java.sql.Connection;
-import java.sql.PreparedStatement;
 import java.sql.SQLException;
 
 import com.j256.ormlite.dao.Dao;
-import com.j256.ormlite.dao.DaoManager;
-import com.j256.ormlite.support.ConnectionSource;
+import com.j256.ormlite.stmt.QueryBuilder;
 import com.jfoenix.controls.JFXButton;
 import com.jfoenix.controls.JFXComboBox;
 import com.jfoenix.controls.JFXListView;
@@ -138,7 +135,9 @@ public class HomeController implements Initializable {
         try {
             for (Movie movie : allMovies) {
                 MovieEntity movieEntity = convertMovieToMovieEntity(movie);
-                movieDao.create(movieEntity);
+                if (isMoviesEntityNotExist(movie.getId())) {
+                    movieDao.create(movieEntity);
+                }
             }
         } catch (SQLException e) {
             throw new RuntimeException(e);
@@ -146,11 +145,28 @@ public class HomeController implements Initializable {
 
     }
 
-    public MovieEntity convertMovieToMovieEntity(Movie movie){
+    public MovieEntity convertMovieToMovieEntity(Movie movie) {
         MovieEntity movieEntity = new MovieEntity();
+        movieEntity.setApiId(movie.getId());
         // дописать методы сохранения значений полей из Movie в MovieEntity
         movieEntity.setTitle(movie.getTitle());
         return movieEntity;
+    }
+
+    public boolean isMoviesEntityNotExist(String apiId) {
+        List<MovieEntity> result = new ArrayList<>();
+        try {
+            QueryBuilder<MovieEntity, Integer> queryBuilder = databaseManager.getMovieDao().queryBuilder();
+
+            // Добавляем условие поиска по полю title
+            queryBuilder.where().like("APIID", "%" + apiId + "%"); // поиск подстроки
+
+            // Получаем результат запроса
+            result = queryBuilder.query();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return result.isEmpty();
     }
 
     public void sortMovies() {
@@ -162,8 +178,8 @@ public class HomeController implements Initializable {
     }
 
     // sort movies based on sortedState
-    // by default sorted state is NONE
-    // afterwards it switches between ascending and descending
+// by default sorted state is NONE
+// afterwards it switches between ascending and descending
     public void sortMovies(SortedState sortDirection) {
         if (sortDirection == SortedState.ASCENDING) {
             observableMovies.sort(Comparator.comparing(Movie::getTitle));

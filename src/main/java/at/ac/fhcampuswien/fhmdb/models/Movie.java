@@ -33,8 +33,9 @@ public class Movie {
         this.lengthInMinutes = 0;
         this.rating = 0;
     }
+
     public Movie(String id, String title, String description, List<Genre> genres, int releaseYear, String imgUrl, int lengthInMinutes, double rating) {
-        if(id == null) {
+        if (id == null) {
             this.id = UUID.randomUUID().toString();
         } else {
             this.id = id;
@@ -50,16 +51,20 @@ public class Movie {
 
     @Override
     public boolean equals(Object obj) {
-        if(obj == null) {
+        if (obj == null) {
             return false;
         }
-        if(obj == this) {
+        if (obj == this) {
             return true;
         }
-        if(!(obj instanceof Movie other)) {
+        if (!(obj instanceof Movie other)) {
             return false;
         }
         return this.title.equals(other.title) && this.description.equals(other.description) && this.genres.equals(other.genres);
+    }
+
+    public String getId() {
+        return id;
     }
 
     public String getTitle() {
@@ -102,12 +107,12 @@ public class Movie {
         return rating;
     }
 
-    public static List<Movie> initializeMovies(){
+    public static List<Movie> initializeMovies() {
         List<Movie> movies = new ArrayList<>();
         movies.add(new Movie(
                 null,
                 "Life Is Beautiful",
-                "When an open-minded Jewish librarian and his son become victims of the Holocaust, he uses a perfect mixture of will, humor, and imagination to protect his son from the dangers around their camp." ,
+                "When an open-minded Jewish librarian and his son become victims of the Holocaust, he uses a perfect mixture of will, humor, and imagination to protect his son from the dangers around their camp.",
                 Arrays.asList(Genre.DRAMA, Genre.ROMANCE),
                 1997,
                 "https://upload.wikimedia.org/wikipedia/en/7/7c/Life_is_Beautiful.jpg",
@@ -131,7 +136,7 @@ public class Movie {
                 "",
                 90,
                 6.6
-                ));
+        ));
         movies.add(new Movie(
                 null,
                 "Avatar",

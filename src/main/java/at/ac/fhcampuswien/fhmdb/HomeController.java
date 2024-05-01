@@ -141,8 +141,9 @@ public class HomeController implements Initializable {
             }
         } catch (SQLException e) {
             throw new RuntimeException(e);
+        } finally {
+            databaseManager.closeConnectionSource();
         }
-
     }
 
     public MovieEntity convertMovieToMovieEntity(Movie movie) {

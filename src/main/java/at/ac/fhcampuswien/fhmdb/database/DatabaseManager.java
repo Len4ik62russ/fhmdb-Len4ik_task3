@@ -52,6 +52,13 @@ public class DatabaseManager {
         connectionSource = new JdbcConnectionSource(DB_Url, username, password);
     }
 
+    public void closeConnectionSource(){
+        try {
+            connectionSource.close();
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
     public void testDB() throws SQLException {
         MovieEntity movie = new MovieEntity("Title1", "Description1");
         movieDao.create(movie);

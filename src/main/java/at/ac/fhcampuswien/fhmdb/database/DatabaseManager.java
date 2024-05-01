@@ -16,6 +16,14 @@ public class DatabaseManager {
     Dao<MovieEntity, Integer> movieDao;
     private static DatabaseManager instance;
 
+    public static ConnectionSource getConnectionSource() {
+        return connectionSource;
+    }
+
+    public Dao<MovieEntity, Integer> getMovieDao() {
+        return movieDao;
+    }
+
     private DatabaseManager() {
         try {
             createConnectionSource();

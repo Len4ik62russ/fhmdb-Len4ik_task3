@@ -6,7 +6,7 @@ import com.j256.ormlite.table.DatabaseTable;
 @DatabaseTable(tableName = "watchlist_movies")
 public class WatchlistMovieEntity {
 
-    @DatabaseField(id = true)
+    @DatabaseField(generatedId = true)
     private long id;
 
     @DatabaseField
@@ -33,6 +33,11 @@ public class WatchlistMovieEntity {
 
     public void setApiId(String apiId) {
         this.apiId = apiId;
+    }
+
+    @Override
+    public String toString() {
+        return this.apiId;
     }
 
 }

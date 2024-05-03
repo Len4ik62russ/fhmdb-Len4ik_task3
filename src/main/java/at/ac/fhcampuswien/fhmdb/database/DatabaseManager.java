@@ -13,23 +13,27 @@ public class DatabaseManager {
     private static String username = "username";
     private static String password = "password";
     private static ConnectionSource connectionSource;
-    Dao<MovieEntity, Integer> movieDao;
+    Dao<MovieEntity, Long> movieDao;
+    Dao<WatchlistMovieEntity, Long> watchlistMovieDao;
     private static DatabaseManager instance;
 
     public static ConnectionSource getConnectionSource() {
         return connectionSource;
     }
 
-    public Dao<MovieEntity, Integer> getMovieDao() {
+    public Dao<MovieEntity, Long> getMovieDao() {
         return movieDao;
+    }
+    public Dao<WatchlistMovieEntity, Long> getWatchlistMovieDao() {
+        return watchlistMovieDao;
     }
 
     private DatabaseManager() {
         try {
             createConnectionSource();
             movieDao = DaoManager.createDao(connectionSource, MovieEntity.class);
+            watchlistMovieDao = DaoManager.createDao(connectionSource, WatchlistMovieEntity.class);
             createTables();
-
 
         } catch (SQLException e) {
             System.out.println("Error creating connection source: " + e.getMessage());

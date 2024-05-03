@@ -3,11 +3,13 @@ package at.ac.fhcampuswien.fhmdb;
 import at.ac.fhcampuswien.fhmdb.api.MovieAPI;
 import at.ac.fhcampuswien.fhmdb.database.DatabaseManager;
 import at.ac.fhcampuswien.fhmdb.database.MovieEntity;
+import at.ac.fhcampuswien.fhmdb.database.WatchlistMovieEntity;
 import at.ac.fhcampuswien.fhmdb.models.Genre;
 import at.ac.fhcampuswien.fhmdb.models.Movie;
 import at.ac.fhcampuswien.fhmdb.models.SortedState;
 import at.ac.fhcampuswien.fhmdb.ui.MovieCell;
 
+import java.io.IOException;
 import java.sql.SQLException;
 
 import com.j256.ormlite.dao.Dao;
@@ -19,8 +21,13 @@ import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
+import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
+import javafx.scene.Node;
+import javafx.scene.Parent;
+import javafx.scene.Scene;
 import javafx.scene.control.TextField;
+import javafx.stage.Stage;
 
 import java.net.URL;
 import java.util.*;
@@ -56,6 +63,11 @@ public class HomeController implements Initializable {
     protected ObservableList<Movie> observableMovies = FXCollections.observableArrayList();
 
     protected SortedState sortedState;
+    private final MovieCell.ClickEventHandler<Movie> onAddToWatchlistClicked = (clickedItem) -> {
+        Movie movie = clickedItem;
+        databaseManager = DatabaseManager.getDatabaseManager();
+        setMovieInWatchlistBD(movie);
+    };
 
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
@@ -68,7 +80,7 @@ public class HomeController implements Initializable {
         List<Movie> result = MovieAPI.getAllMovies();
         setMovies(result);
         setMovieList(result);
-        setMoviesInBD();
+        setMoviesInBD(result);
         sortedState = SortedState.NONE;
 
         // test stream methods
@@ -92,7 +104,7 @@ public class HomeController implements Initializable {
 
     public void initializeLayout() {
         movieListView.setItems(observableMovies);   // set the items of the listview to the observable list
-        movieListView.setCellFactory(movieListView -> new MovieCell()); // apply custom cells to the listview
+        movieListView.setCellFactory(movieListView -> new MovieCell(onAddToWatchlistClicked)); // apply custom cells to the listview
 
         // genre combobox
         Object[] genres = Genre.values();   // get all genres
@@ -130,8 +142,8 @@ public class HomeController implements Initializable {
         observableMovies.addAll(movies);
     }
 
-    private void setMoviesInBD() {
-        Dao<MovieEntity, Integer> movieDao = databaseManager.getMovieDao();
+    public void setMoviesInBD(List<Movie> allMovies) {
+        Dao<MovieEntity, Long> movieDao = databaseManager.getMovieDao();
         try {
             for (Movie movie : allMovies) {
                 MovieEntity movieEntity = convertMovieToMovieEntity(movie);
@@ -146,18 +158,28 @@ public class HomeController implements Initializable {
         }
     }
 
+
     public MovieEntity convertMovieToMovieEntity(Movie movie) {
         MovieEntity movieEntity = new MovieEntity();
         movieEntity.setApiId(movie.getId());
         // дописать методы сохранения значений полей из Movie в MovieEntity
         movieEntity.setTitle(movie.getTitle());
+        movieEntity.setDescription(movie.getDescription());
+        movieEntity.setGenres(movie.getGenres().stream().map(Enum::name).collect(Collectors.joining(", ")));
+        movieEntity.setReleaseYear(movie.getReleaseYear());
+        movieEntity.setImgUrl(movie.getImgUrl());
+        movieEntity.setLengthInMinutes(movie.getLengthInMinutes());
+        movieEntity.setRatingFrom(movie.getRating());
+
+
         return movieEntity;
     }
+
 
     public boolean isMoviesEntityNotExist(String apiId) {
         List<MovieEntity> result = new ArrayList<>();
         try {
-            QueryBuilder<MovieEntity, Integer> queryBuilder = databaseManager.getMovieDao().queryBuilder();
+            QueryBuilder<MovieEntity, Long> queryBuilder = databaseManager.getMovieDao().queryBuilder();
 
             // Добавляем условие поиска по полю title
             queryBuilder.where().like("APIID", "%" + apiId + "%"); // поиск подстроки
@@ -169,6 +191,46 @@ public class HomeController implements Initializable {
         }
         return result.isEmpty();
     }
+
+
+    public void setMovieInWatchlistBD(Movie movie) {
+        Dao<WatchlistMovieEntity, Long> watchlistMovieDao = databaseManager.getWatchlistMovieDao();
+        try {
+
+            WatchlistMovieEntity watchlistMovieEntity = convertMovieToWatchlistMovieEntity(movie);
+            if (isWatchlistMoviesEntityNotExist(movie.getId())) {
+                watchlistMovieDao.create(watchlistMovieEntity);
+            }
+
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        } finally {
+            databaseManager.closeConnectionSource();
+        }
+    }
+
+    public WatchlistMovieEntity convertMovieToWatchlistMovieEntity(Movie movie) {
+        WatchlistMovieEntity watchlistMovieEntity = new WatchlistMovieEntity();
+        watchlistMovieEntity.setApiId(movie.getId());
+        return watchlistMovieEntity;
+    }
+
+    public boolean isWatchlistMoviesEntityNotExist(String apiId) {
+        List<WatchlistMovieEntity> result = new ArrayList<>();
+        try {
+            QueryBuilder<WatchlistMovieEntity, Long> queryBuilder = databaseManager.getWatchlistMovieDao().queryBuilder();
+
+            // Добавляем условие поиска по полю title
+            queryBuilder.where().like("APIID", "%" + apiId + "%"); // поиск подстроки
+
+            // Получаем результат запроса
+            result = queryBuilder.query();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return result.isEmpty();
+    }
+
 
     public void sortMovies() {
         if (sortedState == SortedState.NONE || sortedState == SortedState.DESCENDING) {
@@ -294,5 +356,34 @@ public class HomeController implements Initializable {
         return movies.stream()
                 .filter(movie -> movie.getReleaseYear() >= startYear && movie.getReleaseYear() <= endYear)
                 .collect(Collectors.toList());
+    }
+
+    @FXML
+    public void showWatchlistScreen(ActionEvent event) throws IOException {
+        try {
+            FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/at/ac/fhcampuswien/fhmdb/watchlist-view.fxml"));
+            Parent root = fxmlLoader.load();
+
+            Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
+            stage.setScene(new Scene(root));
+            stage.show();
+
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public List<WatchlistMovieEntity> getWatchlistMoviesFromDB() {
+        List<WatchlistMovieEntity> result = new ArrayList<>();
+        try {
+            QueryBuilder<WatchlistMovieEntity, Long> queryBuilder = databaseManager.getWatchlistMovieDao().queryBuilder();
+
+            // Получаем результат запроса
+            result = queryBuilder.query();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return result;
     }
 }

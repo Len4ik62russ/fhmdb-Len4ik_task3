@@ -1,6 +1,10 @@
 package at.ac.fhcampuswien.fhmdb.ui;
 
+import at.ac.fhcampuswien.fhmdb.database.DatabaseManager;
+import at.ac.fhcampuswien.fhmdb.database.WatchlistMovieEntity;
 import at.ac.fhcampuswien.fhmdb.models.Movie;
+import com.j256.ormlite.dao.Dao;
+import com.j256.ormlite.stmt.QueryBuilder;
 import com.jfoenix.controls.JFXButton;
 import javafx.geometry.Insets;
 import javafx.scene.control.Label;
@@ -10,6 +14,9 @@ import javafx.scene.layout.BackgroundFill;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.stream.Collectors;
 
 public class MovieCell extends ListCell<Movie> {
@@ -17,13 +24,34 @@ public class MovieCell extends ListCell<Movie> {
     private final Label detail = new Label();
     private final Label genre = new Label();
     private final JFXButton detailBtn = new JFXButton("Show Details");
-    private final VBox layout = new VBox(title, detail, genre, detailBtn);
+    private final JFXButton watchlistBtn = new JFXButton("Add to Watchlist");
+    private final VBox layout = new VBox(title, detail, genre, detailBtn, watchlistBtn);
     private boolean collapsedDetails = true;
 
-    public MovieCell() {
+    public interface ClickEventHandler<T> {
+        void onClick(T t) throws SQLException;
+    }
+
+    private ClickEventHandler<Movie> onAddToWatchlistClicked;
+
+
+    public MovieCell(ClickEventHandler<Movie> onAddToWatchlistClicked) {
         super();
+        this.onAddToWatchlistClicked = onAddToWatchlistClicked;
+        watchlistBtn.setOnMouseClicked(mouseEvent -> {
+            try {
+                System.out.println("Add to Watchlist button clicked for movie: " + getItem().getTitle());
+                onAddToWatchlistClicked.onClick(getItem());
+                System.out.println("Movie added to watchlist: " + getItem().getTitle());
+            } catch (SQLException e) {
+                System.out.println("Error adding movie to watchlist: " + e.getMessage());
+                throw new RuntimeException(e);
+            }
+        });
+
         // color scheme
         detailBtn.setStyle("-fx-background-color: #f5c518;");
+        watchlistBtn.setStyle("-fx-background-color: #f5c518;");
         title.getStyleClass().add("text-yellow");
         detail.getStyleClass().add("text-white");
         genre.getStyleClass().add("text-white");
@@ -76,6 +104,7 @@ public class MovieCell extends ListCell<Movie> {
         details.getChildren().add(mainCast);
         return details;
     }
+
     @Override
     protected void updateItem(Movie movie, boolean empty) {
         super.updateItem(movie, empty);

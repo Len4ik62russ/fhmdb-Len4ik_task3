@@ -1,7 +1,9 @@
 package at.ac.fhcampuswien.fhmdb;
 
 import at.ac.fhcampuswien.fhmdb.database.DatabaseManager;
+import at.ac.fhcampuswien.fhmdb.database.MovieEntity;
 import at.ac.fhcampuswien.fhmdb.database.WatchlistMovieEntity;
+import at.ac.fhcampuswien.fhmdb.models.Genre;
 import at.ac.fhcampuswien.fhmdb.models.Movie;
 import at.ac.fhcampuswien.fhmdb.models.WatchlistMovie;
 import at.ac.fhcampuswien.fhmdb.ui.MovieCell;
@@ -23,6 +25,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.ResourceBundle;
+import java.util.stream.Collectors;
 
 public class WatchlistController implements Initializable {
     @FXML
@@ -30,7 +33,7 @@ public class WatchlistController implements Initializable {
     @FXML
     private JFXListView movieListView;
     private final JFXButton watchlistBtn = new JFXButton("Delete to Watchlist");
-    public final ObservableList<WatchlistMovieEntity> observableMovies = FXCollections.observableArrayList();
+    public final ObservableList<Movie> observableMovies = FXCollections.observableArrayList();
     private DatabaseManager databaseManager;
 
     public WatchlistController() {
@@ -45,7 +48,8 @@ public class WatchlistController implements Initializable {
     public void initialize(URL url, ResourceBundle resourceBundle) {
         databaseManager = DatabaseManager.getDatabaseManager();
         List<WatchlistMovieEntity> watchlistMoviesFromDB = getWatchlistMoviesFromDB();
-        observableMovies.addAll(watchlistMoviesFromDB);
+        List<Movie> moviesFromDB = getMoviesFromDB(watchlistMoviesFromDB);
+        observableMovies.addAll(moviesFromDB);
         movieListView.setItems(observableMovies);
         //movieListView.setCellFactory(movieListView -> new MovieCell(onRemoveClicked));
 
@@ -76,5 +80,39 @@ public class WatchlistController implements Initializable {
         return result;
     }
 
+    public List<Movie> getMoviesFromDB(List<WatchlistMovieEntity> watchlistMovieEntities) {
+        List<Movie> result = new ArrayList<>();
+        for (WatchlistMovieEntity watchlistMovieEntity : watchlistMovieEntities) {
+            MovieEntity movieEntity = new MovieEntity();
+            try {
+                QueryBuilder<MovieEntity, Long> queryBuilder = databaseManager.getMovieDao().queryBuilder();
+
+                queryBuilder.where().like("APIID", "%" + watchlistMovieEntity.getApiId() + "%"); // поиск подстроки
+                // Получаем результат запроса
+                movieEntity = queryBuilder.query().get(0);
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
+            Movie movie = convertMovieEntityToMovie(movieEntity);
+            result.add(movie);
+        }
+        return result;
+    }
+
+    public Movie convertMovieEntityToMovie(MovieEntity movieEntity) {
+        Movie movie = new Movie(
+                String.valueOf(movieEntity.getId()),
+                movieEntity.getTitle(),
+                movieEntity.getDescription(),
+                // TODO дописать конвертацию жанров
+                //movieEntity.getGenres().stream().map(Enum::name).collect(Collectors.joining(", ")),
+                new ArrayList<Genre>(),
+                movieEntity.getReleaseYear(),
+                movieEntity.getImgUrl(),
+                movieEntity.getLengthInMinutes(),
+                movieEntity.getRatingFrom());
+
+        return movie;
+    }
 
 }

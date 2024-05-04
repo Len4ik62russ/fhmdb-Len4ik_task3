@@ -7,6 +7,7 @@ import at.ac.fhcampuswien.fhmdb.models.Genre;
 import at.ac.fhcampuswien.fhmdb.models.Movie;
 import at.ac.fhcampuswien.fhmdb.models.WatchlistMovie;
 import at.ac.fhcampuswien.fhmdb.ui.MovieCell;
+import at.ac.fhcampuswien.fhmdb.ui.WatchlistMovieCell;
 import com.j256.ormlite.stmt.QueryBuilder;
 import com.jfoenix.controls.JFXButton;
 import com.jfoenix.controls.JFXListView;
@@ -23,6 +24,7 @@ import java.io.IOException;
 import java.net.URL;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.ResourceBundle;
 import java.util.stream.Collectors;
@@ -43,7 +45,11 @@ public class WatchlistController implements Initializable {
     public WatchlistController(VBox watchlistView) {
         this.watchlistView = watchlistView;
     }
-
+    private final WatchlistMovieCell.ClickEventHandler<Movie> onRemoveClicked = (clickedItem) -> {
+        Movie movie = clickedItem;
+        databaseManager = DatabaseManager.getDatabaseManager();
+        deleteMovieFromWatchlist(movie);
+    };
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
         databaseManager = DatabaseManager.getDatabaseManager();
@@ -51,15 +57,32 @@ public class WatchlistController implements Initializable {
         List<Movie> moviesFromDB = getMoviesFromDB(watchlistMoviesFromDB);
         observableMovies.addAll(moviesFromDB);
         movieListView.setItems(observableMovies);
-        //movieListView.setCellFactory(movieListView -> new MovieCell(onRemoveClicked));
+        movieListView.setCellFactory(movieListView -> new WatchlistMovieCell(onRemoveClicked));
 
     }
 
-    private final MovieCell.ClickEventHandler<WatchlistMovie> onRemoveClicked = (clickedItem) -> {
+   public void deleteMovieFromWatchlist(Movie movie) {
 
-    };
+       try {
+           List<WatchlistMovieEntity> result = new ArrayList<>();
+           QueryBuilder<WatchlistMovieEntity, Long> queryBuilder = databaseManager.getWatchlistMovieDao().queryBuilder();
 
-    @FXML
+           // Добавляем условие поиска по полю
+           queryBuilder.where().like("APIID", "%" + movie.getId() + "%"); // поиск подстроки
+
+           // Получаем результат запроса
+           result = queryBuilder.query();
+           databaseManager.getWatchlistMovieDao().delete(result);
+              observableMovies.remove(movie);
+              WatchlistMovieCell watchlistMovieCell = new WatchlistMovieCell(onRemoveClicked);
+                watchlistMovieCell.updateItem(movie, true);
+
+
+       } catch (SQLException e) {
+           throw new RuntimeException(e);
+       }
+   }
+       @FXML
     public void showHomeScreen() throws IOException {
         Stage stage = (Stage) watchlistView.getScene().getWindow();
         Scene scene = new Scene(FXMLLoader.load(getClass().getResource("/at/ac/fhcampuswien/fhmdb/home-view.fxml")));
@@ -100,13 +123,18 @@ public class WatchlistController implements Initializable {
     }
 
     public Movie convertMovieEntityToMovie(MovieEntity movieEntity) {
+        String gen = movieEntity.getGenres();
+        List<String> genres;
+        genres = Arrays.asList(gen.split(", "));
         Movie movie = new Movie(
                 String.valueOf(movieEntity.getId()),
                 movieEntity.getTitle(),
                 movieEntity.getDescription(),
                 // TODO дописать конвертацию жанров
-                //movieEntity.getGenres().stream().map(Enum::name).collect(Collectors.joining(", ")),
-                new ArrayList<Genre>(),
+                genres.stream().map(Genre::valueOf).collect(Collectors.toList()),
+
+
+
                 movieEntity.getReleaseYear(),
                 movieEntity.getImgUrl(),
                 movieEntity.getLengthInMinutes(),

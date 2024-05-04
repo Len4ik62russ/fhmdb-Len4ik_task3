@@ -7,6 +7,7 @@ module at.ac.fhcampuswien.fhmdb {
     requires com.google.gson;
     requires ormlite.jdbc;
     requires java.sql;
+    requires java.desktop;
 
     opens at.ac.fhcampuswien.fhmdb.models to com.google.gson;
     opens at.ac.fhcampuswien.fhmdb.database to ormlite.jdbc;

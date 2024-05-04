@@ -78,6 +78,15 @@ public class HomeController implements Initializable {
 
     public void initializeState() {
         List<Movie> result = MovieAPI.getAllMovies();
+        if (result.isEmpty()) {
+            try {
+                result = databaseManager.getMovieDao().queryForAll().stream()
+                        .map(this:: convertMovieEntityToMovie)
+                        .collect(Collectors.toList());
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
+        }
         setMovies(result);
         setMovieList(result);
         setMoviesInBD(result);
@@ -101,6 +110,8 @@ public class HomeController implements Initializable {
         System.out.println(between.size());
         System.out.println(between.stream().map(Objects::toString).collect(Collectors.joining(", ")));
     }
+
+
 
     public void initializeLayout() {
         movieListView.setItems(observableMovies);   // set the items of the listview to the observable list
@@ -132,7 +143,22 @@ public class HomeController implements Initializable {
         ratingFromComboBox.getItems().addAll(ratings);    // add all ratings to the combobox
         ratingFromComboBox.setPromptText("Filter by Rating");
     }
+    private Movie convertMovieEntityToMovie(MovieEntity movieEntity) {
+        String gen = movieEntity.getGenres();
+        List<String> genres;
+        genres = Arrays.asList(gen.split(", "));
+        Movie movie = new Movie(
+                String.valueOf(movieEntity.getId()),
+                movieEntity.getTitle(),
+                movieEntity.getDescription(),
+                genres.stream().map(Genre::valueOf).collect(Collectors.toList()),
+                movieEntity.getReleaseYear(),
+                movieEntity.getImgUrl(),
+                movieEntity.getLengthInMinutes(),
+                movieEntity.getRatingFrom());
 
+        return movie;
+    }
     public void setMovies(List<Movie> movies) {
         allMovies = movies;
     }

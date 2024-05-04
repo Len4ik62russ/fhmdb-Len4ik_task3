@@ -1,5 +1,5 @@
 package at.ac.fhcampuswien.fhmdb.api;
-
+import javax.swing.JOptionPane;
 import at.ac.fhcampuswien.fhmdb.models.Genre;
 import at.ac.fhcampuswien.fhmdb.models.Movie;
 import okhttp3.*;
@@ -69,6 +69,7 @@ public class MovieAPI {
             return Arrays.asList(movies);
         } catch (Exception e) {
             System.err.println(e.getMessage());
+            showErrorDialog(e.getMessage());
         }
         return new ArrayList<>();
     }
@@ -87,5 +88,8 @@ public class MovieAPI {
         }
 
         return null;
+    }
+    public static void showErrorDialog(String message) {
+        JOptionPane.showMessageDialog(null, message, "Error", JOptionPane.ERROR_MESSAGE);
     }
 }

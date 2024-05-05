@@ -2,6 +2,7 @@ package at.ac.fhcampuswien.fhmdb.repository.impl;
 
 import at.ac.fhcampuswien.fhmdb.database.DatabaseManager;
 import at.ac.fhcampuswien.fhmdb.database.MovieEntity;
+import at.ac.fhcampuswien.fhmdb.exception.DatabaseException;
 import at.ac.fhcampuswien.fhmdb.repository.MovieRepository;
 import com.j256.ormlite.dao.Dao;
 import com.j256.ormlite.stmt.QueryBuilder;
@@ -18,12 +19,12 @@ public class MovieRepositoryImpl implements MovieRepository {
     }
 
     @Override
-    public void save(MovieEntity movieEntity) {
+    public void save(MovieEntity movieEntity) throws DatabaseException {
         try {
             Dao<MovieEntity, Long> movieDao = databaseManager.getMovieDao();
             movieDao.create(movieEntity);
         } catch (SQLException e) {
-            throw new RuntimeException(e);
+            throw new DatabaseException(e.getMessage());
         } finally {
             databaseManager.closeConnectionSource();
         }

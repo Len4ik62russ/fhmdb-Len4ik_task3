@@ -2,6 +2,7 @@ package at.ac.fhcampuswien.fhmdb.repository.impl;
 
 import at.ac.fhcampuswien.fhmdb.database.DatabaseManager;
 import at.ac.fhcampuswien.fhmdb.database.WatchlistMovieEntity;
+import at.ac.fhcampuswien.fhmdb.exception.DatabaseException;
 import at.ac.fhcampuswien.fhmdb.repository.WatchListMovieRepository;
 import com.j256.ormlite.dao.Dao;
 import com.j256.ormlite.stmt.QueryBuilder;
@@ -50,7 +51,7 @@ public class WatchListMovieRepositoryImpl implements WatchListMovieRepository {
     }
 
     @Override
-    public void delete(String apiId) {
+    public void delete(String apiId) throws DatabaseException {
         try {
             QueryBuilder<WatchlistMovieEntity, Long> queryBuilder = databaseManager.getWatchlistMovieDao().queryBuilder();
 
@@ -59,10 +60,13 @@ public class WatchListMovieRepositoryImpl implements WatchListMovieRepository {
 
             // Получаем результат запроса
             List<WatchlistMovieEntity> result = queryBuilder.query();
+            if (result.isEmpty()) {
+                throw new DatabaseException("No such movie in watchlist");
+            }
             databaseManager.getWatchlistMovieDao().delete(result);
 
         } catch (SQLException e) {
-            throw new RuntimeException(e);
+            throw new DatabaseException(e.getMessage());
         }
     }
 

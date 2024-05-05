@@ -2,6 +2,7 @@ package at.ac.fhcampuswien.fhmdb.service.impl;
 
 import at.ac.fhcampuswien.fhmdb.database.MovieEntity;
 import at.ac.fhcampuswien.fhmdb.database.WatchlistMovieEntity;
+import at.ac.fhcampuswien.fhmdb.exception.DatabaseException;
 import at.ac.fhcampuswien.fhmdb.models.Genre;
 import at.ac.fhcampuswien.fhmdb.models.Movie;
 import at.ac.fhcampuswien.fhmdb.repository.MovieRepository;
@@ -24,7 +25,7 @@ public class HomeServiceImpl implements HomeService {
     }
 
     @Override
-    public void setMoviesInBD(List<Movie> allMovies) {
+    public void setMoviesInBD(List<Movie> allMovies) throws DatabaseException {
         for (Movie movie : allMovies) {
             MovieEntity movieEntity = convertMovieToMovieEntity(movie);
             if (isMoviesEntityNotExist(movie.getId())) {

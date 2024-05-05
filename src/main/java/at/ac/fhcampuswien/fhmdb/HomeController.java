@@ -1,6 +1,7 @@
 package at.ac.fhcampuswien.fhmdb;
 
 import at.ac.fhcampuswien.fhmdb.api.MovieAPI;
+import at.ac.fhcampuswien.fhmdb.exception.DatabaseException;
 import at.ac.fhcampuswien.fhmdb.models.Genre;
 import at.ac.fhcampuswien.fhmdb.models.Movie;
 import at.ac.fhcampuswien.fhmdb.models.SortedState;
@@ -22,6 +23,7 @@ import javafx.scene.Scene;
 import javafx.scene.control.TextField;
 import javafx.stage.Stage;
 
+import javax.swing.*;
 import java.io.IOException;
 import java.net.URL;
 import java.util.*;
@@ -76,7 +78,12 @@ public class HomeController implements Initializable {
         }
         setMovies(result);
         setMovieList(result);
-        homeService.setMoviesInBD(result);
+        try {
+            homeService.setMoviesInBD(result);
+        } catch (DatabaseException e) {
+            System.err.println(e.getMessage());
+            showErrorDialog("DatabaseException");
+        }
         sortedState = SortedState.NONE;
 
         // test stream methods
@@ -281,4 +288,7 @@ public class HomeController implements Initializable {
         }
     }
 
+    public static void showErrorDialog(String message) {
+        JOptionPane.showMessageDialog(null, message, "Error", JOptionPane.ERROR_MESSAGE);
+    }
 }

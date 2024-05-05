@@ -1,6 +1,7 @@
 package at.ac.fhcampuswien.fhmdb.service.impl;
 
 import at.ac.fhcampuswien.fhmdb.database.WatchlistMovieEntity;
+import at.ac.fhcampuswien.fhmdb.exception.DatabaseException;
 import at.ac.fhcampuswien.fhmdb.models.Movie;
 import at.ac.fhcampuswien.fhmdb.repository.WatchListMovieRepository;
 import at.ac.fhcampuswien.fhmdb.repository.impl.WatchListMovieRepositoryImpl;
@@ -40,7 +41,7 @@ public class WatchListServiceImpl implements WatchListService {
     }
 
     @Override
-    public void delete(String apiId) {
+    public void delete(String apiId) throws DatabaseException {
         watchListMovieRepository.delete(apiId);
     }
 

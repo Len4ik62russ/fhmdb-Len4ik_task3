@@ -1,6 +1,7 @@
 package at.ac.fhcampuswien.fhmdb;
 
 import at.ac.fhcampuswien.fhmdb.database.WatchlistMovieEntity;
+import at.ac.fhcampuswien.fhmdb.exception.DatabaseException;
 import at.ac.fhcampuswien.fhmdb.models.Movie;
 import at.ac.fhcampuswien.fhmdb.service.WatchListService;
 import at.ac.fhcampuswien.fhmdb.service.impl.WatchListServiceImpl;
@@ -16,6 +17,7 @@ import javafx.scene.Scene;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 
+import javax.swing.*;
 import java.io.IOException;
 import java.net.URL;
 import java.util.List;
@@ -54,7 +56,12 @@ public class WatchlistController implements Initializable {
     }
 
     public void deleteMovieFromWatchlist(Movie movie) {
-        watchListService.delete(movie.getId());
+        try {
+            watchListService.delete(movie.getId());
+        } catch (DatabaseException e) {
+            System.err.println("Error deleting movie from watchlist: " + e.getMessage());
+            showErrorDialog("DatabaseException: " + e.getMessage());
+        }
         observableMovies.remove(movie);
         WatchlistMovieCell watchlistMovieCell = new WatchlistMovieCell(onRemoveClicked);
         watchlistMovieCell.updateItem(movie, true);
@@ -72,4 +79,7 @@ public class WatchlistController implements Initializable {
         return watchListService.getAll();
     }
 
+    public static void showErrorDialog(String message) {
+        JOptionPane.showMessageDialog(null, message, "Error", JOptionPane.ERROR_MESSAGE);
+    }
 }

@@ -1,19 +1,12 @@
 package at.ac.fhcampuswien.fhmdb;
 
 import at.ac.fhcampuswien.fhmdb.api.MovieAPI;
-import at.ac.fhcampuswien.fhmdb.database.DatabaseManager;
-import at.ac.fhcampuswien.fhmdb.database.MovieEntity;
-import at.ac.fhcampuswien.fhmdb.database.WatchlistMovieEntity;
 import at.ac.fhcampuswien.fhmdb.models.Genre;
 import at.ac.fhcampuswien.fhmdb.models.Movie;
 import at.ac.fhcampuswien.fhmdb.models.SortedState;
+import at.ac.fhcampuswien.fhmdb.service.HomeService;
+import at.ac.fhcampuswien.fhmdb.service.impl.HomeServiceImpl;
 import at.ac.fhcampuswien.fhmdb.ui.MovieCell;
-
-import java.io.IOException;
-import java.sql.SQLException;
-
-import com.j256.ormlite.dao.Dao;
-import com.j256.ormlite.stmt.QueryBuilder;
 import com.jfoenix.controls.JFXButton;
 import com.jfoenix.controls.JFXComboBox;
 import com.jfoenix.controls.JFXListView;
@@ -29,6 +22,7 @@ import javafx.scene.Scene;
 import javafx.scene.control.TextField;
 import javafx.stage.Stage;
 
+import java.io.IOException;
 import java.net.URL;
 import java.util.*;
 import java.util.function.Function;
@@ -56,7 +50,7 @@ public class HomeController implements Initializable {
     @FXML
     public JFXButton sortBtn;
 
-    private DatabaseManager databaseManager;
+    private HomeService homeService;
 
     public List<Movie> allMovies;
 
@@ -65,13 +59,12 @@ public class HomeController implements Initializable {
     protected SortedState sortedState;
     private final MovieCell.ClickEventHandler<Movie> onAddToWatchlistClicked = (clickedItem) -> {
         Movie movie = clickedItem;
-        databaseManager = DatabaseManager.getDatabaseManager();
-        setMovieInWatchlistBD(movie);
+        homeService.setMovieInWatchlistBD(movie);
     };
 
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
-        databaseManager = DatabaseManager.getDatabaseManager();
+        homeService = new HomeServiceImpl();
         initializeState();
         initializeLayout();
     }
@@ -79,17 +72,11 @@ public class HomeController implements Initializable {
     public void initializeState() {
         List<Movie> result = MovieAPI.getAllMovies();
         if (result.isEmpty()) {
-            try {
-                result = databaseManager.getMovieDao().queryForAll().stream()
-                        .map(this:: convertMovieEntityToMovie)
-                        .collect(Collectors.toList());
-            } catch (SQLException e) {
-                e.printStackTrace();
-            }
+            result = homeService.getMoviesFromBD();
         }
         setMovies(result);
         setMovieList(result);
-        setMoviesInBD(result);
+        homeService.setMoviesInBD(result);
         sortedState = SortedState.NONE;
 
         // test stream methods
@@ -110,7 +97,6 @@ public class HomeController implements Initializable {
         System.out.println(between.size());
         System.out.println(between.stream().map(Objects::toString).collect(Collectors.joining(", ")));
     }
-
 
 
     public void initializeLayout() {
@@ -143,22 +129,7 @@ public class HomeController implements Initializable {
         ratingFromComboBox.getItems().addAll(ratings);    // add all ratings to the combobox
         ratingFromComboBox.setPromptText("Filter by Rating");
     }
-    private Movie convertMovieEntityToMovie(MovieEntity movieEntity) {
-        String gen = movieEntity.getGenres();
-        List<String> genres;
-        genres = Arrays.asList(gen.split(", "));
-        Movie movie = new Movie(
-                String.valueOf(movieEntity.getId()),
-                movieEntity.getTitle(),
-                movieEntity.getDescription(),
-                genres.stream().map(Genre::valueOf).collect(Collectors.toList()),
-                movieEntity.getReleaseYear(),
-                movieEntity.getImgUrl(),
-                movieEntity.getLengthInMinutes(),
-                movieEntity.getRatingFrom());
 
-        return movie;
-    }
     public void setMovies(List<Movie> movies) {
         allMovies = movies;
     }
@@ -166,95 +137,6 @@ public class HomeController implements Initializable {
     public void setMovieList(List<Movie> movies) {
         observableMovies.clear();
         observableMovies.addAll(movies);
-    }
-
-    public void setMoviesInBD(List<Movie> allMovies) {
-        Dao<MovieEntity, Long> movieDao = databaseManager.getMovieDao();
-        try {
-            for (Movie movie : allMovies) {
-                MovieEntity movieEntity = convertMovieToMovieEntity(movie);
-                if (isMoviesEntityNotExist(movie.getId())) {
-                    movieDao.create(movieEntity);
-                }
-            }
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        } finally {
-            databaseManager.closeConnectionSource();
-        }
-    }
-
-
-    public MovieEntity convertMovieToMovieEntity(Movie movie) {
-        MovieEntity movieEntity = new MovieEntity();
-        movieEntity.setApiId(movie.getId());
-        // дописать методы сохранения значений полей из Movie в MovieEntity
-        movieEntity.setTitle(movie.getTitle());
-        movieEntity.setDescription(movie.getDescription());
-        movieEntity.setGenres(movie.getGenres().stream().map(Enum::name).collect(Collectors.joining(", ")));
-        movieEntity.setReleaseYear(movie.getReleaseYear());
-        movieEntity.setImgUrl(movie.getImgUrl());
-        movieEntity.setLengthInMinutes(movie.getLengthInMinutes());
-        movieEntity.setRatingFrom(movie.getRating());
-
-
-        return movieEntity;
-    }
-
-
-    public boolean isMoviesEntityNotExist(String apiId) {
-        List<MovieEntity> result = new ArrayList<>();
-        try {
-            QueryBuilder<MovieEntity, Long> queryBuilder = databaseManager.getMovieDao().queryBuilder();
-
-            // Добавляем условие поиска по полю title
-            queryBuilder.where().like("APIID", "%" + apiId + "%"); // поиск подстроки
-
-            // Получаем результат запроса
-            result = queryBuilder.query();
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        return result.isEmpty();
-    }
-
-
-    public void setMovieInWatchlistBD(Movie movie) {
-        Dao<WatchlistMovieEntity, Long> watchlistMovieDao = databaseManager.getWatchlistMovieDao();
-        try {
-
-            WatchlistMovieEntity watchlistMovieEntity = convertMovieToWatchlistMovieEntity(movie);
-            if (isWatchlistMoviesEntityNotExist(movie.getId())) {
-                watchlistMovieDao.create(watchlistMovieEntity);
-            }
-
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        } finally {
-            databaseManager.closeConnectionSource();
-        }
-    }
-
-    public WatchlistMovieEntity convertMovieToWatchlistMovieEntity(Movie movie) {
-        WatchlistMovieEntity watchlistMovieEntity = new WatchlistMovieEntity();
-        watchlistMovieEntity.setApiId(movie.getId());
-        return watchlistMovieEntity;
-    }
-
-    public boolean isWatchlistMoviesEntityNotExist(String apiId) {
-        List<WatchlistMovieEntity> result = new ArrayList<>();
-        try {
-            QueryBuilder<WatchlistMovieEntity, Long> queryBuilder = databaseManager.getWatchlistMovieDao().queryBuilder();
-
-            // Добавляем условие поиска по полю title
-            queryBuilder.where().like("APIID", "%" + apiId + "%"); // поиск подстроки
-
-            // Получаем результат запроса
-            result = queryBuilder.query();
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        return result.isEmpty();
     }
 
 
@@ -394,22 +276,9 @@ public class HomeController implements Initializable {
             stage.setScene(new Scene(root));
             stage.show();
 
-
         } catch (IOException e) {
             e.printStackTrace();
         }
     }
 
-    public List<WatchlistMovieEntity> getWatchlistMoviesFromDB() {
-        List<WatchlistMovieEntity> result = new ArrayList<>();
-        try {
-            QueryBuilder<WatchlistMovieEntity, Long> queryBuilder = databaseManager.getWatchlistMovieDao().queryBuilder();
-
-            // Получаем результат запроса
-            result = queryBuilder.query();
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        return result;
-    }
 }

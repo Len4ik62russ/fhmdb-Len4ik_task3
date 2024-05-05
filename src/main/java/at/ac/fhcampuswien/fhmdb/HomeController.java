@@ -2,6 +2,7 @@ package at.ac.fhcampuswien.fhmdb;
 
 import at.ac.fhcampuswien.fhmdb.api.MovieAPI;
 import at.ac.fhcampuswien.fhmdb.exception.DatabaseException;
+import at.ac.fhcampuswien.fhmdb.exception.MovieApiException;
 import at.ac.fhcampuswien.fhmdb.models.Genre;
 import at.ac.fhcampuswien.fhmdb.models.Movie;
 import at.ac.fhcampuswien.fhmdb.models.SortedState;
@@ -75,6 +76,11 @@ public class HomeController implements Initializable {
         List<Movie> result = MovieAPI.getAllMovies();
         if (result.isEmpty()) {
             result = homeService.getMoviesFromBD();
+            try {
+                throw new MovieApiException("Failed to fetch movies from API. Using local data.");
+            } catch (MovieApiException e) {
+                showErrorDialog(e.getMessage());
+            }
         }
         setMovies(result);
         setMovieList(result);

@@ -331,7 +331,7 @@ public class HomeController implements Initializable {
         List<Movie> movies = getMovies(searchQuery, genre, releaseYear, ratingFrom);
         setMovies(movies);
         setMovieList(movies);
-        // applyAllFilters(searchQuery, genre);
+        applyAllFilters(searchQuery, genre);
 
         sortMovies(sortedState);
     }

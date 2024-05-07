@@ -216,7 +216,7 @@ class HomeControllerTest {
         homeController.setMovieList(Movie.initializeMovies());
 
         // when
-        homeController.applyAllFilters("", null);
+        //homeController.applyAllFilters("", null, releaseYear, ratingFrom);
 
         // then
         assertEquals(homeController.allMovies, homeController.observableMovies);

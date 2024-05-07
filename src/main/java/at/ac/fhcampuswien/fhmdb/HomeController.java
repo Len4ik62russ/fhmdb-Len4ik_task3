@@ -9,6 +9,7 @@ import at.ac.fhcampuswien.fhmdb.models.SortedState;
 import at.ac.fhcampuswien.fhmdb.service.HomeService;
 import at.ac.fhcampuswien.fhmdb.service.impl.HomeServiceImpl;
 import at.ac.fhcampuswien.fhmdb.ui.MovieCell;
+import com.j256.ormlite.stmt.query.In;
 import com.jfoenix.controls.JFXButton;
 import com.jfoenix.controls.JFXComboBox;
 import com.jfoenix.controls.JFXListView;
@@ -208,15 +209,34 @@ public class HomeController implements Initializable {
         return movies.stream().filter(movie -> movie.getGenres().contains(genre)).toList();
     }
 
-    public void applyAllFilters(String searchQuery, Object genre) {
+    public List<Movie> filterByYear(List<Movie> movies, int releaseYear) {
+        return movies.stream()
+                .filter(movie -> movie.getReleaseYear() == releaseYear)
+                .toList();
+    }
+
+    public List<Movie> filterByRatingFrom(List<Movie> movies, double ratingFrom) {
+        return movies.stream()
+                .filter(movie -> movie.getRating() == ratingFrom)
+                .toList();
+    }
+
+    public void applyAllFilters(String searchQuery, Object genre, String releaseYear, String ratingFrom) {
         List<Movie> filteredMovies = allMovies;
 
         if (!searchQuery.isEmpty()) {
             filteredMovies = filterByQuery(filteredMovies, searchQuery);
         }
-
         if (genre != null && !genre.toString().equals("No filter")) {
             filteredMovies = filterByGenre(filteredMovies, Genre.valueOf(genre.toString()));
+        }
+        if (releaseYear != null && !releaseYear.isEmpty()) {
+            int year = Integer.parseInt(releaseYear);
+            filteredMovies = filterByYear(filteredMovies, year);
+        }
+        if (ratingFrom != null && !ratingFrom.isEmpty()) {
+            double rating = Double.parseDouble(ratingFrom);
+            filteredMovies = filterByRatingFrom(filteredMovies, rating);
         }
 
         observableMovies.clear();
@@ -234,10 +254,7 @@ public class HomeController implements Initializable {
             genre = Genre.valueOf(genreValue);
         }
 
-        List<Movie> movies = getMovies(searchQuery, genre, releaseYear, ratingFrom);
-        setMovies(movies);
-        setMovieList(movies);
-        applyAllFilters(searchQuery, genre);
+        applyAllFilters(searchQuery, genre, releaseYear, ratingFrom);
 
         sortMovies(sortedState);
     }

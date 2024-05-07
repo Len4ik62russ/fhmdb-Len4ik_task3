@@ -9,7 +9,7 @@ import at.ac.fhcampuswien.fhmdb.models.SortedState;
 import at.ac.fhcampuswien.fhmdb.service.HomeService;
 import at.ac.fhcampuswien.fhmdb.service.impl.HomeServiceImpl;
 import at.ac.fhcampuswien.fhmdb.ui.MovieCell;
-import com.j256.ormlite.stmt.query.In;
+import at.ac.fhcampuswien.fhmdb.utils.Filter;
 import com.jfoenix.controls.JFXButton;
 import com.jfoenix.controls.JFXComboBox;
 import com.jfoenix.controls.JFXListView;
@@ -81,27 +81,25 @@ public class HomeController implements Initializable {
     public void initializeState() {
         List<Movie> result = MovieAPI.getAllMovies();
         if (result.isEmpty()) {
+            getAllMoviesFromBD();
             try {
                 throw new MovieApiException("Failed to fetch movies from API. Using local data.");
             } catch (MovieApiException e) {
                 System.err.println(e.getMessage());
                 showErrorDialog(e.getMessage());
             }
+        } else {
+            try {
+                homeService.setMoviesInBD(result);
+            } catch (DatabaseException e) {
+                System.err.println(e.getMessage());
+                showErrorDialog("DatabaseException: cashing failed");
+            }
         }
-        try {
-            result = homeService.getMoviesFromBD();
-        } catch (DatabaseException e) {
-            System.err.println(e.getMessage());
-            showErrorDialog(e.getMessage());
-        }
+
         setMovies(result);
-        setMovieList(result);
-        try {
-            homeService.setMoviesInBD(result);
-        } catch (DatabaseException e) {
-            System.err.println(e.getMessage());
-            showErrorDialog("DatabaseException: cashing failed");
-        }
+        setObservableMovieList(result);
+
         sortedState = SortedState.NONE;
 
         // test stream methods
@@ -123,6 +121,14 @@ public class HomeController implements Initializable {
         System.out.println(between.stream().map(Objects::toString).collect(Collectors.joining(", ")));
     }
 
+    private void getAllMoviesFromBD() {
+        try {
+            setObservableMovieList(homeService.getMoviesFromBD());
+        } catch (DatabaseException e) {
+            System.err.println(e.getMessage());
+            showErrorDialog(e.getMessage());
+        }
+    }
 
     public void initializeLayout() {
         movieListView.setItems(observableMovies);   // set the items of the listview to the observable list
@@ -159,7 +165,7 @@ public class HomeController implements Initializable {
         allMovies = movies;
     }
 
-    public void setMovieList(List<Movie> movies) {
+    public void setObservableMovieList(List<Movie> movies) {
         observableMovies.clear();
         observableMovies.addAll(movies);
     }
@@ -186,64 +192,8 @@ public class HomeController implements Initializable {
         }
     }
 
-    public List<Movie> filterByQuery(List<Movie> movies, String query) {
-        if (query == null || query.isEmpty()) return movies;
-
-        if (movies == null) {
-            throw new IllegalArgumentException("movies must not be null");
-        }
-
-        return movies.stream().filter(movie ->
-                        movie.getTitle().toLowerCase().contains(query.toLowerCase()) ||
-                                movie.getDescription().toLowerCase().contains(query.toLowerCase()))
-                .toList();
-    }
-
-    public List<Movie> filterByGenre(List<Movie> movies, Genre genre) {
-        if (genre == null) return movies;
-
-        if (movies == null) {
-            throw new IllegalArgumentException("movies must not be null");
-        }
-
-        return movies.stream().filter(movie -> movie.getGenres().contains(genre)).toList();
-    }
-
-    public List<Movie> filterByYear(List<Movie> movies, int releaseYear) {
-        return movies.stream()
-                .filter(movie -> movie.getReleaseYear() == releaseYear)
-                .toList();
-    }
-
-    public List<Movie> filterByRatingFrom(List<Movie> movies, double ratingFrom) {
-        return movies.stream()
-                .filter(movie -> movie.getRating() == ratingFrom)
-                .toList();
-    }
-
-    public void applyAllFilters(String searchQuery, Object genre, String releaseYear, String ratingFrom) {
-        List<Movie> filteredMovies = allMovies;
-
-        if (!searchQuery.isEmpty()) {
-            filteredMovies = filterByQuery(filteredMovies, searchQuery);
-        }
-        if (genre != null && !genre.toString().equals("No filter")) {
-            filteredMovies = filterByGenre(filteredMovies, Genre.valueOf(genre.toString()));
-        }
-        if (releaseYear != null && !releaseYear.isEmpty()) {
-            int year = Integer.parseInt(releaseYear);
-            filteredMovies = filterByYear(filteredMovies, year);
-        }
-        if (ratingFrom != null && !ratingFrom.isEmpty()) {
-            double rating = Double.parseDouble(ratingFrom);
-            filteredMovies = filterByRatingFrom(filteredMovies, rating);
-        }
-
-        observableMovies.clear();
-        observableMovies.addAll(filteredMovies);
-    }
-
     public void searchBtnClicked(ActionEvent actionEvent) {
+        getAllMoviesFromBD();
         String searchQuery = searchField.getText().trim().toLowerCase();
         String releaseYear = validateComboboxValue(releaseYearComboBox.getSelectionModel().getSelectedItem());
         String ratingFrom = validateComboboxValue(ratingFromComboBox.getSelectionModel().getSelectedItem());
@@ -254,8 +204,8 @@ public class HomeController implements Initializable {
             genre = Genre.valueOf(genreValue);
         }
 
-        applyAllFilters(searchQuery, genre, releaseYear, ratingFrom);
-
+        List<Movie> filteredMovies = Filter.applyAllFilters(observableMovies, searchQuery, genre, releaseYear, ratingFrom);
+        setObservableMovieList(filteredMovies);
         sortMovies(sortedState);
     }
 

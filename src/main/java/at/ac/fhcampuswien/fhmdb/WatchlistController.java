@@ -82,7 +82,13 @@ public class WatchlistController implements Initializable {
     }
 
     public List<WatchlistMovieEntity> getWatchlistMoviesFromDB() {
-        return watchListService.getAll();
+        try {
+            return watchListService.getAll();
+        } catch (DatabaseException e) {
+            System.err.println("Error getting watchlist movies from DB: " + e.getMessage());
+            showErrorDialog("DatabaseException: " + e.getMessage());
+            return null;
+        }
     }
 
     public static void showErrorDialog(String message) {

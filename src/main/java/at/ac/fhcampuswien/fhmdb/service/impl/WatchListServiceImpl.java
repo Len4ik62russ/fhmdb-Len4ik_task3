@@ -26,17 +26,17 @@ public class WatchListServiceImpl implements WatchListService {
     }
 
     @Override
-    public void save(WatchlistMovieEntity watchlistMovieEntity) {
+    public void save(WatchlistMovieEntity watchlistMovieEntity) throws DatabaseException {
         watchListMovieRepository.save(watchlistMovieEntity);
     }
 
     @Override
-    public WatchlistMovieEntity get(String apiId) {
+    public WatchlistMovieEntity get(String apiId) throws DatabaseException {
         return watchListMovieRepository.get(apiId);
     }
 
     @Override
-    public List<WatchlistMovieEntity> getAll() {
+    public List<WatchlistMovieEntity> getAll() throws DatabaseException {
         return watchListMovieRepository.getAll();
     }
 

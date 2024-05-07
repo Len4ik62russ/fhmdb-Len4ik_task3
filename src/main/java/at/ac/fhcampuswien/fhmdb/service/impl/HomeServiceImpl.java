@@ -98,7 +98,7 @@ public class HomeServiceImpl implements HomeService {
         return watchlistMovieEntity;
     }
 
-    public boolean isWatchlistMoviesEntityNotExist(String apiId) {
+    public boolean isWatchlistMoviesEntityNotExist(String apiId) throws DatabaseException {
         WatchlistMovieEntity watchlistMovieEntity = watchListService.get(apiId);
         return Objects.isNull(watchlistMovieEntity);
     }

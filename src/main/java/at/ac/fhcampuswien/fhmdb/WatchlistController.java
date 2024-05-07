@@ -49,7 +49,13 @@ public class WatchlistController implements Initializable {
         watchListService = new WatchListServiceImpl();
         List<WatchlistMovieEntity> watchlistMoviesFromDB = getWatchlistMoviesFromDB();
 
-        List<Movie> moviesFromDB = watchListService.getMoviesFromDB(watchlistMoviesFromDB);
+        List<Movie> moviesFromDB = null;
+        try {
+            moviesFromDB = watchListService.getMoviesFromDB(watchlistMoviesFromDB);
+        } catch (DatabaseException e) {
+            System.err.println(e.getMessage());
+            showErrorDialog("DatabaseException: failed to get movies from Database");
+        }
         observableMovies.addAll(moviesFromDB);
         movieListView.setItems(observableMovies);
         movieListView.setCellFactory(movieListView -> new WatchlistMovieCell(onRemoveClicked));

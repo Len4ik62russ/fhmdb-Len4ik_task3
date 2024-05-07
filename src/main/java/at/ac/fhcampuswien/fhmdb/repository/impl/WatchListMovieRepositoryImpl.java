@@ -23,8 +23,7 @@ public class WatchListMovieRepositoryImpl implements WatchListMovieRepository {
         try {
             Dao<WatchlistMovieEntity, Long> watchlistMovieDao = databaseManager.getWatchlistMovieDao();
             watchlistMovieDao.create(watchlistMovieEntity);
-        } catch (
-                SQLException e) {
+        } catch (SQLException e) {
             throw new RuntimeException(e);
         } finally {
             databaseManager.closeConnectionSource();
@@ -66,7 +65,7 @@ public class WatchListMovieRepositoryImpl implements WatchListMovieRepository {
             databaseManager.getWatchlistMovieDao().delete(result);
 
         } catch (SQLException e) {
-            throw new DatabaseException(e.getMessage());
+            throw new DatabaseException("Database error: " + e.getMessage());
         }
     }
 
@@ -77,6 +76,7 @@ public class WatchListMovieRepositoryImpl implements WatchListMovieRepository {
             QueryBuilder<WatchlistMovieEntity, Long> queryBuilder = databaseManager.getWatchlistMovieDao().queryBuilder();
             // Получаем результат запроса
             result = queryBuilder.query();
+
         } catch (SQLException e) {
             e.printStackTrace();
         }

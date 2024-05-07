@@ -46,7 +46,7 @@ public class WatchListServiceImpl implements WatchListService {
     }
 
     @Override
-    public List<Movie> getMoviesFromDB(List<WatchlistMovieEntity> watchlistMovieEntities) {
+    public List<Movie> getMoviesFromDB(List<WatchlistMovieEntity> watchlistMovieEntities) throws DatabaseException {
         List<Movie> result = new ArrayList<>();
         for (WatchlistMovieEntity watchlistMovieEntity : watchlistMovieEntities) {
             Movie movie = homeService.getMovie(watchlistMovieEntity.getApiId());

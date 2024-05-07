@@ -35,24 +35,24 @@ public class HomeServiceImpl implements HomeService {
     }
 
     @Override
-    public Movie getMovie(String apiId) {
+    public Movie getMovie(String apiId) throws DatabaseException {
         return convertMovieEntityToMovie(movieRepository.get(apiId));
     }
 
     @Override
-    public List<Movie> getMoviesFromBD() {
+    public List<Movie> getMoviesFromBD () throws DatabaseException {
         return movieRepository.getAll().stream()
                 .map(this::convertMovieEntityToMovie)
                 .collect(Collectors.toList());
     }
 
     @Override
-    public void setMovieInWatchlistBD(Movie movie) {
+    public void setMovieInWatchlistBD(Movie movie) throws DatabaseException{
         WatchlistMovieEntity watchlistMovieEntity = convertMovieToWatchlistMovieEntity(movie);
         if (isWatchlistMoviesEntityNotExist(movie.getId())) {
             watchListService.save(watchlistMovieEntity);
         } else {
-            //TODO: throw exception
+            throw new DatabaseException("Movie already exists in the watchlist");
         }
     }
 
@@ -87,7 +87,7 @@ public class HomeServiceImpl implements HomeService {
         return movie;
     }
 
-    public boolean isMoviesEntityNotExist(String apiId) {
+    public boolean isMoviesEntityNotExist(String apiId) throws DatabaseException {
         MovieEntity movieEntity = movieRepository.get(apiId);
         return Objects.isNull(movieEntity);
     }

@@ -9,9 +9,9 @@ import java.util.List;
 public interface HomeService {
     void setMoviesInBD(List<Movie> allMovies) throws DatabaseException;
 
-    Movie getMovie(String apiId);
+    Movie getMovie(String apiId) throws DatabaseException;
 
-    List<Movie> getMoviesFromBD();
+    List<Movie> getMoviesFromBD() throws DatabaseException;
 
-    void setMovieInWatchlistBD(Movie movie);
+    void setMovieInWatchlistBD(Movie movie) throws DatabaseException;
 }

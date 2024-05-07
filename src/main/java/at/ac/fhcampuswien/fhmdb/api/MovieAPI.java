@@ -69,7 +69,7 @@ public class MovieAPI {
             return Arrays.asList(movies);
         } catch (Exception e) {
             System.err.println(e.getMessage());
-            showErrorDialog(e.getMessage());
+            //showErrorDialog(e.getMessage());
         }
         return new ArrayList<>();
     }

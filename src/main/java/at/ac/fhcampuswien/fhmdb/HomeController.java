@@ -62,7 +62,12 @@ public class HomeController implements Initializable {
     protected SortedState sortedState;
     private final MovieCell.ClickEventHandler<Movie> onAddToWatchlistClicked = (clickedItem) -> {
         Movie movie = clickedItem;
-        homeService.setMovieInWatchlistBD(movie);
+        try {
+            homeService.setMovieInWatchlistBD(movie);
+        } catch (DatabaseException e) {
+
+            showErrorDialog(e.getMessage());
+        }
     };
 
     @Override
@@ -75,12 +80,18 @@ public class HomeController implements Initializable {
     public void initializeState() {
         List<Movie> result = MovieAPI.getAllMovies();
         if (result.isEmpty()) {
-            result = homeService.getMoviesFromBD();
             try {
                 throw new MovieApiException("Failed to fetch movies from API. Using local data.");
             } catch (MovieApiException e) {
+                System.err.println(e.getMessage());
                 showErrorDialog(e.getMessage());
             }
+        }
+        try {
+            result = homeService.getMoviesFromBD();
+        } catch (DatabaseException e) {
+            System.err.println(e.getMessage());
+            showErrorDialog(e.getMessage());
         }
         setMovies(result);
         setMovieList(result);
@@ -88,7 +99,7 @@ public class HomeController implements Initializable {
             homeService.setMoviesInBD(result);
         } catch (DatabaseException e) {
             System.err.println(e.getMessage());
-            showErrorDialog("DatabaseException");
+            showErrorDialog("DatabaseException: cashing failed");
         }
         sortedState = SortedState.NONE;
 

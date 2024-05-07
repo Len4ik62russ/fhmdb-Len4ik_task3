@@ -15,5 +15,5 @@ public interface WatchListService {
 
     void delete(String apiId) throws DatabaseException;
 
-    List<Movie> getMoviesFromDB(List<WatchlistMovieEntity> watchlistMovieEntities);
+    List<Movie> getMoviesFromDB(List<WatchlistMovieEntity> watchlistMovieEntities) throws DatabaseException;
 }

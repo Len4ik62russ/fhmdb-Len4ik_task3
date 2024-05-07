@@ -8,7 +8,7 @@ import java.util.List;
 public interface MovieRepository {
     void save(MovieEntity movieEntity) throws DatabaseException;
 
-    MovieEntity get(String apiId);
+    MovieEntity get(String apiId) throws DatabaseException;
 
-    List<MovieEntity> getAll();
+    List<MovieEntity> getAll() throws DatabaseException;
 }

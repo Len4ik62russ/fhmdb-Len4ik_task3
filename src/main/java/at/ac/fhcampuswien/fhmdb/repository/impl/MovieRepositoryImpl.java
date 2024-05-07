@@ -31,8 +31,8 @@ public class MovieRepositoryImpl implements MovieRepository {
     }
 
     @Override
-    public MovieEntity get(String apiId) {
-        List<MovieEntity> result = new ArrayList<>();
+    public MovieEntity get(String apiId) throws DatabaseException {
+        List<MovieEntity> result;
         try {
             QueryBuilder<MovieEntity, Long> queryBuilder = databaseManager.getMovieDao().queryBuilder();
             queryBuilder.where().like("APIID", "%" + apiId + "%"); // поиск подстроки
@@ -40,7 +40,7 @@ public class MovieRepositoryImpl implements MovieRepository {
             // Получаем результат запроса
             result = queryBuilder.query();
         } catch (SQLException e) {
-            e.printStackTrace();
+            throw new DatabaseException(e.getMessage());
         }
         if (result.isEmpty()) {
             return null;
@@ -50,12 +50,12 @@ public class MovieRepositoryImpl implements MovieRepository {
     }
 
     @Override
-    public List<MovieEntity> getAll() {
-        List<MovieEntity> result = new ArrayList<>();
+    public List<MovieEntity> getAll() throws DatabaseException {
+        List<MovieEntity> result;
         try {
             result = databaseManager.getMovieDao().queryForAll();
         } catch (SQLException e) {
-            e.printStackTrace();
+            throw new DatabaseException(e.getMessage());
         }
         return result;
     }
